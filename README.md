@@ -1,4 +1,4 @@
-# Harrys Shop
+# One Stop Shop
 
 I started making a vibe coded e commerce shop and it was cool to make something in a day but I was frusterated with my inability to understand it deeply and be able to fix issue easily so I am starting again without AI code generation.
 
