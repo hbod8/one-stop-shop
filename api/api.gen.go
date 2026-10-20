@@ -15,6 +15,85 @@ import (
 	"github.com/oapi-codegen/runtime"
 )
 
+// Defines values for InvalidTokenUnauthorizedBodyMessage.
+const (
+	ExpiredTokenMessage          InvalidTokenUnauthorizedBodyMessage = "The access token has expired"
+	MissingOrInvalidTokenMessage InvalidTokenUnauthorizedBodyMessage = "The access token is missing or invalid"
+)
+
+// Valid indicates whether the value is a known member of the InvalidTokenUnauthorizedBodyMessage enum.
+func (e InvalidTokenUnauthorizedBodyMessage) Valid() bool {
+	switch e {
+	case ExpiredTokenMessage:
+		return true
+	case MissingOrInvalidTokenMessage:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MissingOrMalformedRequestBodyMessage.
+const (
+	MissingOrMalformedRequestMessage MissingOrMalformedRequestBodyMessage = "The request body is missing, malformed or contains missing values"
+)
+
+// Valid indicates whether the value is a known member of the MissingOrMalformedRequestBodyMessage enum.
+func (e MissingOrMalformedRequestBodyMessage) Valid() bool {
+	switch e {
+	case MissingOrMalformedRequestMessage:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PostAuthLogin401JSONResponseBodyMessage.
+const (
+	InvalidCredentialsMessage PostAuthLogin401JSONResponseBodyMessage = "The provided username or password is incorrect"
+)
+
+// Valid indicates whether the value is a known member of the PostAuthLogin401JSONResponseBodyMessage enum.
+func (e PostAuthLogin401JSONResponseBodyMessage) Valid() bool {
+	switch e {
+	case InvalidCredentialsMessage:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductsId404JSONResponseBodyMessage.
+const (
+	ProductNotFoundMessage GetProductsId404JSONResponseBodyMessage = "The product with the specified ID was not found"
+)
+
+// Valid indicates whether the value is a known member of the GetProductsId404JSONResponseBodyMessage enum.
+func (e GetProductsId404JSONResponseBodyMessage) Valid() bool {
+	switch e {
+	case ProductNotFoundMessage:
+		return true
+	default:
+		return false
+	}
+}
+
+// InvalidTokenUnauthorizedBody defines model for InvalidTokenUnauthorizedBody.
+type InvalidTokenUnauthorizedBody struct {
+	Message InvalidTokenUnauthorizedBodyMessage `json:"message"`
+}
+
+// InvalidTokenUnauthorizedBodyMessage defines model for InvalidTokenUnauthorizedBody.Message.
+type InvalidTokenUnauthorizedBodyMessage string
+
+// MissingOrMalformedRequestBody defines model for MissingOrMalformedRequestBody.
+type MissingOrMalformedRequestBody struct {
+	Message MissingOrMalformedRequestBodyMessage `json:"message"`
+}
+
+// MissingOrMalformedRequestBodyMessage defines model for MissingOrMalformedRequestBody.Message.
+type MissingOrMalformedRequestBodyMessage string
+
 // Product defines model for Product.
 type Product struct {
 	Description string  `json:"description"`
@@ -23,11 +102,44 @@ type Product struct {
 	Price       float32 `json:"price"`
 }
 
+// InvalidCredentialsUnauthorized defines model for InvalidCredentialsUnauthorized.
+type InvalidCredentialsUnauthorized = InvalidTokenUnauthorizedBody
+
+// MissingOrMalformedRequest defines model for MissingOrMalformedRequest.
+type MissingOrMalformedRequest = MissingOrMalformedRequestBody
+
+// ProductList defines model for ProductList.
+type ProductList = []Product
+
+// PostAuthLoginJSONBody defines parameters for PostAuthLogin.
+type PostAuthLoginJSONBody struct {
+	Password *string `json:"password,omitempty"`
+	Username *string `json:"username,omitempty"`
+}
+
+// PostAuthLogin401JSONResponseBodyMessage defines parameters for PostAuthLogin.
+type PostAuthLogin401JSONResponseBodyMessage string
+
+// GetProductsId404JSONResponseBodyMessage defines parameters for GetProductsId.
+type GetProductsId404JSONResponseBodyMessage string
+
+// PostAuthLoginJSONRequestBody defines body for PostAuthLogin for application/json ContentType.
+type PostAuthLoginJSONRequestBody PostAuthLoginJSONBody
+
+// PostProductsJSONRequestBody defines body for PostProducts for application/json ContentType.
+type PostProductsJSONRequestBody = Product
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// PostAuthLogin User login
+	// (POST /auth/login)
+	PostAuthLogin(w http.ResponseWriter, r *http.Request)
 	// GetProducts Get all products
 	// (GET /products)
 	GetProducts(w http.ResponseWriter, r *http.Request)
+	// PostProducts Create a new product
+	// (POST /products)
+	PostProducts(w http.ResponseWriter, r *http.Request)
 	// GetProductsId Get a product by ID
 	// (GET /products/{id})
 	GetProductsId(w http.ResponseWriter, r *http.Request, id string)
@@ -42,11 +154,39 @@ type ServerInterfaceWrapper struct {
 
 type MiddlewareFunc func(http.Handler) http.Handler
 
+// PostAuthLogin operation middleware
+func (siw *ServerInterfaceWrapper) PostAuthLogin(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostAuthLogin(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetProducts operation middleware
 func (siw *ServerInterfaceWrapper) GetProducts(w http.ResponseWriter, r *http.Request) {
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetProducts(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostProducts operation middleware
+func (siw *ServerInterfaceWrapper) PostProducts(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostProducts(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -203,9 +343,76 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	}
 
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/products", wrapper.GetProducts)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/products", wrapper.PostProducts)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/products/{id}", wrapper.GetProductsId)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/auth/login", wrapper.PostAuthLogin)
 
 	return m
+}
+
+type InvalidCredentialsUnauthorizedJSONResponse InvalidTokenUnauthorizedBody
+
+type MissingOrMalformedRequestJSONResponse MissingOrMalformedRequestBody
+
+type ProductJSONResponse Product
+
+type ProductListJSONResponse []Product
+
+type PostAuthLoginRequestObject struct {
+	Body *PostAuthLoginJSONRequestBody
+}
+
+type PostAuthLoginResponseObject interface {
+	VisitPostAuthLoginResponse(w http.ResponseWriter) error
+}
+
+type PostAuthLogin200JSONResponse struct {
+	RefreshToken *string `json:"refresh token,omitempty"`
+	Token        *string `json:"token,omitempty"`
+}
+
+func (response PostAuthLogin200JSONResponse) VisitPostAuthLoginResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PostAuthLogin400JSONResponse struct {
+	MissingOrMalformedRequestJSONResponse
+}
+
+func (response PostAuthLogin400JSONResponse) VisitPostAuthLoginResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PostAuthLogin401JSONResponse struct {
+	Message PostAuthLogin401JSONResponseBodyMessage `json:"message"`
+}
+
+func (response PostAuthLogin401JSONResponse) VisitPostAuthLoginResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type GetProductsRequestObject struct {
@@ -215,7 +422,7 @@ type GetProductsResponseObject interface {
 	VisitGetProductsResponse(w http.ResponseWriter) error
 }
 
-type GetProducts200JSONResponse []Product
+type GetProducts200JSONResponse struct{ ProductListJSONResponse }
 
 func (response GetProducts200JSONResponse) VisitGetProductsResponse(w http.ResponseWriter) error {
 
@@ -229,6 +436,74 @@ func (response GetProducts200JSONResponse) VisitGetProductsResponse(w http.Respo
 	return err
 }
 
+type GetProducts204JSONResponse []Product
+
+func (response GetProducts204JSONResponse) VisitGetProductsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(204)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PostProductsRequestObject struct {
+	Body *PostProductsJSONRequestBody
+}
+
+type PostProductsResponseObject interface {
+	VisitPostProductsResponse(w http.ResponseWriter) error
+}
+
+type PostProducts201JSONResponse struct{ ProductJSONResponse }
+
+func (response PostProducts201JSONResponse) VisitPostProductsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PostProducts400JSONResponse struct {
+	MissingOrMalformedRequestJSONResponse
+}
+
+func (response PostProducts400JSONResponse) VisitPostProductsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PostProducts401JSONResponse struct {
+	InvalidCredentialsUnauthorizedJSONResponse
+}
+
+func (response PostProducts401JSONResponse) VisitPostProductsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetProductsIdRequestObject struct {
 	Id string `json:"id"`
 }
@@ -237,7 +512,7 @@ type GetProductsIdResponseObject interface {
 	VisitGetProductsIdResponse(w http.ResponseWriter) error
 }
 
-type GetProductsId200JSONResponse Product
+type GetProductsId200JSONResponse struct{ ProductJSONResponse }
 
 func (response GetProductsId200JSONResponse) VisitGetProductsIdResponse(w http.ResponseWriter) error {
 
@@ -251,19 +526,33 @@ func (response GetProductsId200JSONResponse) VisitGetProductsIdResponse(w http.R
 	return err
 }
 
-type GetProductsId404Response struct {
+type GetProductsId404JSONResponse struct {
+	Message GetProductsId404JSONResponseBodyMessage `json:"message"`
 }
 
-func (response GetProductsId404Response) VisitGetProductsIdResponse(w http.ResponseWriter) error {
+func (response GetProductsId404JSONResponse) VisitGetProductsIdResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
-	return nil
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// PostAuthLogin User login
+	// (POST /auth/login)
+	PostAuthLogin(ctx context.Context, request PostAuthLoginRequestObject) (PostAuthLoginResponseObject, error)
 	// GetProducts Get all products
 	// (GET /products)
 	GetProducts(ctx context.Context, request GetProductsRequestObject) (GetProductsResponseObject, error)
+	// PostProducts Create a new product
+	// (POST /products)
+	PostProducts(ctx context.Context, request PostProductsRequestObject) (PostProductsResponseObject, error)
 	// GetProductsId Get a product by ID
 	// (GET /products/{id})
 	GetProductsId(ctx context.Context, request GetProductsIdRequestObject) (GetProductsIdResponseObject, error)
@@ -308,6 +597,37 @@ type strictHandler struct {
 	options     StrictHTTPServerOptions
 }
 
+// PostAuthLogin operation middleware
+func (sh *strictHandler) PostAuthLogin(w http.ResponseWriter, r *http.Request) {
+	var request PostAuthLoginRequestObject
+
+	var body PostAuthLoginJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PostAuthLogin(ctx, request.(PostAuthLoginRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostAuthLogin")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PostAuthLoginResponseObject); ok {
+		if err := validResponse.VisitPostAuthLoginResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // GetProducts operation middleware
 func (sh *strictHandler) GetProducts(w http.ResponseWriter, r *http.Request) {
 	var request GetProductsRequestObject
@@ -325,6 +645,37 @@ func (sh *strictHandler) GetProducts(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetProductsResponseObject); ok {
 		if err := validResponse.VisitGetProductsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PostProducts operation middleware
+func (sh *strictHandler) PostProducts(w http.ResponseWriter, r *http.Request) {
+	var request PostProductsRequestObject
+
+	var body PostProductsJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PostProducts(ctx, request.(PostProductsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostProducts")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PostProductsResponseObject); ok {
+		if err := validResponse.VisitPostProductsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

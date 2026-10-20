@@ -4,21 +4,37 @@ info:
   description: A simple ecommerce application.
   version: 0.0.1
 
+security:
+  - bearerAuth: []
+
 paths:
   /products:
     get:
+      security: []
       summary: Get all products
       responses:
         '200':
-          description: A list of products
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Product'
+          $ref: '#/components/responses/ProductList'
+        '204':
+          $ref: '#/components/responses/ProductList'
+    post:
+      summary: Create a new product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Product'
+      responses:
+        '201':
+          $ref: '#/components/responses/Product'
+        '401':
+          $ref: '#/components/responses/InvalidCredentialsUnauthorized'
+        '400':
+          $ref: '#/components/responses/MissingOrMalformedRequest'
   /products/{id}:
     get:
+      security: []
       summary: Get a product by ID
       parameters:
         - name: id
@@ -28,15 +44,72 @@ paths:
             type: string
       responses:
         '200':
-          description: A single product
+          $ref: '#/components/responses/Product'
+        '404':
+          description: Product not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Product'
-        '404':
-          description: Product not found
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    enum:
+                      - The product with the specified ID was not found
+                    x-enum-varnames:
+                      - ProductNotFoundMessage
+  /auth/login:
+    post:
+      summary: User login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Successful login, returns a JWT token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  refresh token:
+                    type: string
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    enum:
+                      - The provided username or password is incorrect
+                    x-enum-varnames:
+                      - InvalidCredentialsMessage
+        '400':
+          $ref: '#/components/responses/MissingOrMalformedRequest'
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     Product:
       required:
@@ -55,3 +128,54 @@ components:
         price:
           type: number
           format: float
+    InvalidTokenUnauthorizedBody:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          enum:
+            - The access token is missing or invalid
+            - The access token has expired
+          x-enum-varnames:
+            - MissingOrInvalidTokenMessage
+            - ExpiredTokenMessage
+    MissingOrMalformedRequestBody:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          enum:
+            - The request body is missing, malformed or contains missing values
+          x-enum-varnames:
+            - MissingOrMalformedRequestMessage
+  responses:
+    Product:
+      description: A single product
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Product'
+    ProductList:
+      description: A list of products
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Product'
+    InvalidCredentialsUnauthorized:
+      description: Invalid credentials
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/InvalidTokenUnauthorizedBody'
+    MissingOrMalformedRequest:
+      description: The request was invalid or cannot be otherwise served
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MissingOrMalformedRequestBody'
