@@ -5,6 +5,7 @@ go 1.27.0
 tool github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen
 
 require (
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/oapi-codegen/runtime v1.7.0
 	gopkg.in/yaml.v3 v3.0.1
 )

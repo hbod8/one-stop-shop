@@ -6,10 +6,13 @@ BUILD_TIME := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 help:
 	@echo "targets: run, dev, build"
 
-run:
+generate:
+	go generate ./...
+
+run: generate
 	go run -ldflags "-X main.generateSecrets=true -X main.buildTime=$(BUILD_TIME)" ./cmd/onestopshop
 
-dev:
+dev: generate
 	go build -ldflags "-X main.generateSecrets=true -X main.buildTime=$(BUILD_TIME)" -o bin/onestopshop-dev ./cmd/onestopshop
 
 build:
