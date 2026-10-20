@@ -14,9 +14,21 @@ paths:
       summary: Get all products
       responses:
         '200':
-          $ref: '#/components/responses/ProductList'
+          description: A list of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
         '204':
-          $ref: '#/components/responses/ProductList'
+          description: A list of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
     post:
       summary: Create a new product
       requestBody:
@@ -27,11 +39,43 @@ paths:
               $ref: '#/components/schemas/Product'
       responses:
         '201':
-          $ref: '#/components/responses/Product'
+          description: Product created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
         '401':
-          $ref: '#/components/responses/InvalidCredentialsUnauthorized'
+          description: Access token is missing or invalid
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    enum:
+                      - The access token is missing or invalid
+                      - The access token has expired
+                    x-enum-varnames:
+                      - MissingOrInvalidTokenMessage
+                      - ExpiredTokenMessage
         '400':
-          $ref: '#/components/responses/MissingOrMalformedRequest'
+          description: The request was invalid or cannot be otherwise served
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    enum:
+                      - The request body is missing, malformed or contains missing values
+                    x-enum-varnames:
+                      - MissingOrMalformedRequestMessage
   /products/{id}:
     get:
       security: []
@@ -44,7 +88,11 @@ paths:
             type: string
       responses:
         '200':
-          $ref: '#/components/responses/Product'
+          description: A single product
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
         '404':
           description: Product not found
           content:
@@ -102,7 +150,20 @@ paths:
                     x-enum-varnames:
                       - InvalidCredentialsMessage
         '400':
-          $ref: '#/components/responses/MissingOrMalformedRequest'
+          description: The request was invalid or cannot be otherwise served
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    enum:
+                      - The request body is missing, malformed or contains missing values
+                    x-enum-varnames:
+                      - LoginMalformedRequestMessage
 
 components:
   securitySchemes:
@@ -128,54 +189,3 @@ components:
         price:
           type: number
           format: float
-    InvalidTokenUnauthorizedBody:
-      type: object
-      required:
-        - message
-      properties:
-        message:
-          type: string
-          enum:
-            - The access token is missing or invalid
-            - The access token has expired
-          x-enum-varnames:
-            - MissingOrInvalidTokenMessage
-            - ExpiredTokenMessage
-    MissingOrMalformedRequestBody:
-      type: object
-      required:
-        - message
-      properties:
-        message:
-          type: string
-          enum:
-            - The request body is missing, malformed or contains missing values
-          x-enum-varnames:
-            - MissingOrMalformedRequestMessage
-  responses:
-    Product:
-      description: A single product
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Product'
-    ProductList:
-      description: A list of products
-      content:
-        application/json:
-          schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/Product'
-    InvalidCredentialsUnauthorized:
-      description: Invalid credentials
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/InvalidTokenUnauthorizedBody'
-    MissingOrMalformedRequest:
-      description: The request was invalid or cannot be otherwise served
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/MissingOrMalformedRequestBody'

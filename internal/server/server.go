@@ -21,17 +21,13 @@ var products = []api.Product{
 }
 
 func (s *Server) GetProducts(ctx context.Context, request api.GetProductsRequestObject) (api.GetProductsResponseObject, error) {
-	return api.GetProducts200JSONResponse{
-		ProductListJSONResponse: api.ProductListJSONResponse(products),
-	}, nil
+	return api.GetProducts200JSONResponse(products), nil
 }
 
 func (s *Server) GetProductsId(ctx context.Context, request api.GetProductsIdRequestObject) (api.GetProductsIdResponseObject, error) {
 	for _, p := range products {
 		if p.Id == request.Id {
-			return api.GetProductsId200JSONResponse{
-				ProductJSONResponse: api.ProductJSONResponse(p),
-			}, nil
+			return api.GetProductsId200JSONResponse(p), nil
 		}
 	}
 	return api.GetProductsId404JSONResponse{
@@ -42,9 +38,7 @@ func (s *Server) GetProductsId(ctx context.Context, request api.GetProductsIdReq
 func (s *Server) PostProducts(ctx context.Context, request api.PostProductsRequestObject) (api.PostProductsResponseObject, error) {
 	if request.Body.Id == "" || request.Body.Name == "" || request.Body.Description == "" || request.Body.Price <= 0 {
 		return api.PostProducts400JSONResponse{
-			MissingOrMalformedRequestJSONResponse: api.MissingOrMalformedRequestJSONResponse{
-				Message: api.MissingOrMalformedRequestMessage,
-			},
+			Message: api.MissingOrMalformedRequestMessage,
 		}, nil
 	}
 	newProduct := api.Product{
@@ -54,9 +48,7 @@ func (s *Server) PostProducts(ctx context.Context, request api.PostProductsReque
 		Price:       request.Body.Price,
 	}
 	products = append(products, newProduct)
-	return api.PostProducts201JSONResponse{
-		ProductJSONResponse: api.ProductJSONResponse(newProduct),
-	}, nil
+	return api.PostProducts201JSONResponse(newProduct), nil
 }
 
 func (s *Server) PostAuthLogin(ctx context.Context, request api.PostAuthLoginRequestObject) (api.PostAuthLoginResponseObject, error) {
@@ -67,18 +59,4 @@ func (s *Server) PostAuthLogin(ctx context.Context, request api.PostAuthLoginReq
 	return api.PostAuthLogin401JSONResponse{
 		Message: api.InvalidCredentialsMessage,
 	}, nil
-}
-
-func MalformedRequestResponse() api.MissingOrMalformedRequestJSONResponse {
-	return api.MissingOrMalformedRequestJSONResponse{
-		Message: api.MissingOrMalformedRequestMessage,
-	}
-}
-
-func ProductListResponse(products []api.Product) api.ProductListJSONResponse {
-	return api.ProductListJSONResponse(products)
-}
-
-func ProductResponse(product api.Product) api.ProductJSONResponse {
-	return api.ProductJSONResponse(product)
 }

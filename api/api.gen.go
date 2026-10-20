@@ -15,33 +15,15 @@ import (
 	"github.com/oapi-codegen/runtime"
 )
 
-// Defines values for InvalidTokenUnauthorizedBodyMessage.
+// Defines values for PostAuthLogin400JSONResponseBodyMessage.
 const (
-	ExpiredTokenMessage          InvalidTokenUnauthorizedBodyMessage = "The access token has expired"
-	MissingOrInvalidTokenMessage InvalidTokenUnauthorizedBodyMessage = "The access token is missing or invalid"
+	LoginMalformedRequestMessage PostAuthLogin400JSONResponseBodyMessage = "The request body is missing, malformed or contains missing values"
 )
 
-// Valid indicates whether the value is a known member of the InvalidTokenUnauthorizedBodyMessage enum.
-func (e InvalidTokenUnauthorizedBodyMessage) Valid() bool {
+// Valid indicates whether the value is a known member of the PostAuthLogin400JSONResponseBodyMessage enum.
+func (e PostAuthLogin400JSONResponseBodyMessage) Valid() bool {
 	switch e {
-	case ExpiredTokenMessage:
-		return true
-	case MissingOrInvalidTokenMessage:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for MissingOrMalformedRequestBodyMessage.
-const (
-	MissingOrMalformedRequestMessage MissingOrMalformedRequestBodyMessage = "The request body is missing, malformed or contains missing values"
-)
-
-// Valid indicates whether the value is a known member of the MissingOrMalformedRequestBodyMessage enum.
-func (e MissingOrMalformedRequestBodyMessage) Valid() bool {
-	switch e {
-	case MissingOrMalformedRequestMessage:
+	case LoginMalformedRequestMessage:
 		return true
 	default:
 		return false
@@ -63,6 +45,39 @@ func (e PostAuthLogin401JSONResponseBodyMessage) Valid() bool {
 	}
 }
 
+// Defines values for PostProducts400JSONResponseBodyMessage.
+const (
+	MissingOrMalformedRequestMessage PostProducts400JSONResponseBodyMessage = "The request body is missing, malformed or contains missing values"
+)
+
+// Valid indicates whether the value is a known member of the PostProducts400JSONResponseBodyMessage enum.
+func (e PostProducts400JSONResponseBodyMessage) Valid() bool {
+	switch e {
+	case MissingOrMalformedRequestMessage:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PostProducts401JSONResponseBodyMessage.
+const (
+	ExpiredTokenMessage          PostProducts401JSONResponseBodyMessage = "The access token has expired"
+	MissingOrInvalidTokenMessage PostProducts401JSONResponseBodyMessage = "The access token is missing or invalid"
+)
+
+// Valid indicates whether the value is a known member of the PostProducts401JSONResponseBodyMessage enum.
+func (e PostProducts401JSONResponseBodyMessage) Valid() bool {
+	switch e {
+	case ExpiredTokenMessage:
+		return true
+	case MissingOrInvalidTokenMessage:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for GetProductsId404JSONResponseBodyMessage.
 const (
 	ProductNotFoundMessage GetProductsId404JSONResponseBodyMessage = "The product with the specified ID was not found"
@@ -78,22 +93,6 @@ func (e GetProductsId404JSONResponseBodyMessage) Valid() bool {
 	}
 }
 
-// InvalidTokenUnauthorizedBody defines model for InvalidTokenUnauthorizedBody.
-type InvalidTokenUnauthorizedBody struct {
-	Message InvalidTokenUnauthorizedBodyMessage `json:"message"`
-}
-
-// InvalidTokenUnauthorizedBodyMessage defines model for InvalidTokenUnauthorizedBody.Message.
-type InvalidTokenUnauthorizedBodyMessage string
-
-// MissingOrMalformedRequestBody defines model for MissingOrMalformedRequestBody.
-type MissingOrMalformedRequestBody struct {
-	Message MissingOrMalformedRequestBodyMessage `json:"message"`
-}
-
-// MissingOrMalformedRequestBodyMessage defines model for MissingOrMalformedRequestBody.Message.
-type MissingOrMalformedRequestBodyMessage string
-
 // Product defines model for Product.
 type Product struct {
 	Description string  `json:"description"`
@@ -102,23 +101,23 @@ type Product struct {
 	Price       float32 `json:"price"`
 }
 
-// InvalidCredentialsUnauthorized defines model for InvalidCredentialsUnauthorized.
-type InvalidCredentialsUnauthorized = InvalidTokenUnauthorizedBody
-
-// MissingOrMalformedRequest defines model for MissingOrMalformedRequest.
-type MissingOrMalformedRequest = MissingOrMalformedRequestBody
-
-// ProductList defines model for ProductList.
-type ProductList = []Product
-
 // PostAuthLoginJSONBody defines parameters for PostAuthLogin.
 type PostAuthLoginJSONBody struct {
 	Password *string `json:"password,omitempty"`
 	Username *string `json:"username,omitempty"`
 }
 
+// PostAuthLogin400JSONResponseBodyMessage defines parameters for PostAuthLogin.
+type PostAuthLogin400JSONResponseBodyMessage string
+
 // PostAuthLogin401JSONResponseBodyMessage defines parameters for PostAuthLogin.
 type PostAuthLogin401JSONResponseBodyMessage string
+
+// PostProducts400JSONResponseBodyMessage defines parameters for PostProducts.
+type PostProducts400JSONResponseBodyMessage string
+
+// PostProducts401JSONResponseBodyMessage defines parameters for PostProducts.
+type PostProducts401JSONResponseBodyMessage string
 
 // GetProductsId404JSONResponseBodyMessage defines parameters for GetProductsId.
 type GetProductsId404JSONResponseBodyMessage string
@@ -350,14 +349,6 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	return m
 }
 
-type InvalidCredentialsUnauthorizedJSONResponse InvalidTokenUnauthorizedBody
-
-type MissingOrMalformedRequestJSONResponse MissingOrMalformedRequestBody
-
-type ProductJSONResponse Product
-
-type ProductListJSONResponse []Product
-
 type PostAuthLoginRequestObject struct {
 	Body *PostAuthLoginJSONRequestBody
 }
@@ -384,7 +375,7 @@ func (response PostAuthLogin200JSONResponse) VisitPostAuthLoginResponse(w http.R
 }
 
 type PostAuthLogin400JSONResponse struct {
-	MissingOrMalformedRequestJSONResponse
+	Message PostAuthLogin400JSONResponseBodyMessage `json:"message"`
 }
 
 func (response PostAuthLogin400JSONResponse) VisitPostAuthLoginResponse(w http.ResponseWriter) error {
@@ -422,7 +413,7 @@ type GetProductsResponseObject interface {
 	VisitGetProductsResponse(w http.ResponseWriter) error
 }
 
-type GetProducts200JSONResponse struct{ ProductListJSONResponse }
+type GetProducts200JSONResponse []Product
 
 func (response GetProducts200JSONResponse) VisitGetProductsResponse(w http.ResponseWriter) error {
 
@@ -458,7 +449,7 @@ type PostProductsResponseObject interface {
 	VisitPostProductsResponse(w http.ResponseWriter) error
 }
 
-type PostProducts201JSONResponse struct{ ProductJSONResponse }
+type PostProducts201JSONResponse Product
 
 func (response PostProducts201JSONResponse) VisitPostProductsResponse(w http.ResponseWriter) error {
 
@@ -473,7 +464,7 @@ func (response PostProducts201JSONResponse) VisitPostProductsResponse(w http.Res
 }
 
 type PostProducts400JSONResponse struct {
-	MissingOrMalformedRequestJSONResponse
+	Message PostProducts400JSONResponseBodyMessage `json:"message"`
 }
 
 func (response PostProducts400JSONResponse) VisitPostProductsResponse(w http.ResponseWriter) error {
@@ -489,7 +480,7 @@ func (response PostProducts400JSONResponse) VisitPostProductsResponse(w http.Res
 }
 
 type PostProducts401JSONResponse struct {
-	InvalidCredentialsUnauthorizedJSONResponse
+	Message PostProducts401JSONResponseBodyMessage `json:"message"`
 }
 
 func (response PostProducts401JSONResponse) VisitPostProductsResponse(w http.ResponseWriter) error {
@@ -512,7 +503,7 @@ type GetProductsIdResponseObject interface {
 	VisitGetProductsIdResponse(w http.ResponseWriter) error
 }
 
-type GetProductsId200JSONResponse struct{ ProductJSONResponse }
+type GetProductsId200JSONResponse Product
 
 func (response GetProductsId200JSONResponse) VisitGetProductsIdResponse(w http.ResponseWriter) error {
 
