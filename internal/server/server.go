@@ -8,10 +8,14 @@ import (
 
 var _ api.StrictServerInterface = (*Server)(nil)
 
-type Server struct{}
+type Server struct {
+	auth *Auth
+}
 
-func New() *Server {
-	return &Server{}
+func New(auth *Auth) *Server {
+	return &Server{
+		auth: auth,
+	}
 }
 
 // Hardcoded data for the proof of concept; replace with a store later.
@@ -52,11 +56,17 @@ func (s *Server) PostProducts(ctx context.Context, request api.PostProductsReque
 }
 
 func (s *Server) PostAuthLogin(ctx context.Context, request api.PostAuthLoginRequestObject) (api.PostAuthLoginResponseObject, error) {
-	if request.Body.Username != nil && *request.Body.Username == "harry" && request.Body.Password != nil && *request.Body.Password == "secret" {
-		token := "fake-jwt-token"
-		return api.PostAuthLogin200JSONResponse{Token: &token}, nil
+	if request.Body.Username == nil || *request.Body.Username == "" || request.Body.Password == nil || *request.Body.Password == "" {
+		return api.PostAuthLogin400JSONResponse{
+			Message: api.LoginMalformedRequestMessage,
+		}, nil
 	}
-	return api.PostAuthLogin401JSONResponse{
-		Message: api.InvalidCredentialsMessage,
-	}, nil
+	token, refreshToken, err := s.auth.Authenticate(*request.Body.Username, *request.Body.Password)
+	if err == ErrInvalidCredentials {
+		return api.PostAuthLogin401JSONResponse{
+			Message: api.InvalidCredentialsMessage,
+		}, nil
+	} else {
+		return api.PostAuthLogin200JSONResponse{Token: token, RefreshToken: refreshToken}, nil
+	}
 }

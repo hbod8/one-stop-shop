@@ -128,11 +128,14 @@ paths:
           content:
             application/json:
               schema:
+                required:
+                  - token
+                  - refreshToken
                 type: object
                 properties:
                   token:
                     type: string
-                  refresh token:
+                  refreshToken:
                     type: string
         '401':
           description: Invalid credentials

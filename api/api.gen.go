@@ -358,8 +358,8 @@ type PostAuthLoginResponseObject interface {
 }
 
 type PostAuthLogin200JSONResponse struct {
-	RefreshToken *string `json:"refresh token,omitempty"`
-	Token        *string `json:"token,omitempty"`
+	RefreshToken string `json:"refreshToken"`
+	Token        string `json:"token"`
 }
 
 func (response PostAuthLogin200JSONResponse) VisitPostAuthLoginResponse(w http.ResponseWriter) error {

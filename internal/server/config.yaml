@@ -1,0 +1,9 @@
+auth:
+  refreshTokenTtlSeconds: 604800 # 7 days
+  tokenTtlSeconds: 300 # 5 minutes
+  secretKeyPath: internal/server/secret.key
+  publicKeyPath: internal/server/public.key
+  crypto:
+    algorithm: ED25519
+    keySize: 2048
+  generateKeys: true # do not use in production, only for development and testing
